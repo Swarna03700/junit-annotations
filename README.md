@@ -8,6 +8,12 @@ This repository documents my experimentation with **JUnit 5 (Jupiter)** annotati
 - **Testing Framework:** JUnit 5 (Jupiter)
 - **Build Tool:** Gradle
 
+## Labs
+- [Lab 1: The Standard Unit](#-lab-1-the-standard-unit-test)
+- [Lab 2: Data-Driven Testing](#-lab-2-data-driven-testing-parameterizedtest)
+- [Lab 3: Stress and Stability Testing](#-lab-3-stress--stability-testing-repeatedtest)
+- [Lab 4: Test Lifecycle](#-lab-4-test-lifecycle-beforeeach-beforeall-etc)
+
 ## 🧪 Lab 1: The Standard Unit (`@Test`)
 
 **Goal:** The atomic unit of testing using standard `@Test` annotation.
@@ -103,3 +109,88 @@ public int rollDice() {
 ```
 
 💡 **Key Takeway:** `@RepeatedTest` is essential for testing "flaky" code, random generators, or potential concurrency issues where a bug might only appear 1 out of 100 times.
+
+## 🧪 Lab 4: Test Lifecycle (`@BeforeEach, @BeforeAll, etc.)
+
+**Goal:** How to manage test setup and teardown effectively to ensure tests are isolated and efficient.
+
+**Scenario:** Simulated a `SimpleServer` that requires an expensive connection (booting up) and a clean state (empty data) for every test.
+
+**Implementation**
+
+**Logic:**
+
+```Java
+public class SimpleServer {
+
+	private List<String> data = new ArrayList<>();
+
+	public void connect() {
+		System.out.println("Server connecting ...");
+	}
+
+	public void disconnect() {
+		System.out.println("Server disconnecting ...");
+	}
+
+	public void addData(String item) {
+		data.add(item);
+	}
+
+	public void clearData() {
+		data.clear();
+	}
+
+	public int countItems() {
+		return data.size();
+	}
+}
+```
+
+**Test:**
+
+```Java
+public class SimpleServerTest {
+
+	static SimpleServer server;
+
+	@BeforeAll
+	static void init() {
+		server = new SimpleServer();
+		server.connect();
+	}
+
+	@BeforeEach
+	void setup() {
+		System.out.println("Clearing data ...");
+		server.clearData();
+	}
+
+	@Test
+	@DisplayName("Should add single item")
+	void testAddOneItem() {
+		System.out.println("Running test 1 🧪");
+		server.addData("Item 1");
+		assertEquals(1, server.countItems());
+	}
+
+	@Test
+	@DisplayName("Should add two items")
+	void testAddTwoItems() {
+		System.out.println("Running test 2 🧪");
+		server.addData("Item 1");
+		server.addData("Item 2");
+		assertEquals(2, server.countItems());
+	}
+
+	@AfterAll
+	static void close() {
+		server.disconnect();
+	}
+}
+```
+💡 **Key Takeway:** 
+- Use `@BeforeEach` to ensure test **Isolation**.
+- Use `@BeforeAll` for **Performance** (Don't restart the whole server/ database for every single test)
+- `@BeforeAll` and `@AfterAll` methods must be **static**.
+
